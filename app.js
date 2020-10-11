@@ -12,6 +12,7 @@ const MENTION_REGEX = /(\s|^)(@\w+)/g;
 const PAGE_REGEX = /^\d+\/\d+$/;
 const BOLD_REGEX = /^\**(.*)\**$/;
 const ITALIC_REGEX = /^\_*(.*)\_*$/;
+const DUPLICATE_STYLES_REGEX = /(\_|\*){2,}/g;
 
 const replaceWithMatch = (_, match) => match;
 
@@ -68,7 +69,10 @@ app.command('/post-list', async ({ command, ack, say }) => {
         try {
             await say({
                 channel: command.channel_id,
-                text: `${message} ${mentionsString}`,
+                text: `${message} ${mentionsString}`.replace(
+                    DUPLICATE_STYLES_REGEX,
+                    replaceWithMatch
+                ),
                 link_names: true
             });
         } catch {}
