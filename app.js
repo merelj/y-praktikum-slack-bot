@@ -44,13 +44,19 @@ app.command('/post-list', async ({ command, ack, say }) => {
                     unformattedMsg.match(PAGE_REGEX) &&
                     acc.messages.length
                 ) {
-                    // crutch for pagination on the separate line (bold)
+                    // TODO: refactor?
+                    // crutch: pagination on the separate line (bold)
                     acc.messages[
                         acc.messages.length - 1
                     ] += `*${trimmedMsg}*\n`;
                 } else {
-                    if (acc.currentMessageLines.length === 0) {
+                    if (
                         // 1st line of message (no styling)
+                        acc.currentMessageLines.length === 0 || 
+                        // TODO: refactor
+                        // crutch: for already formatted strings (slack puts closing "_" before emojis)
+                        (trimmedMsg[0] === '_' && trimmedMsg.indexOf('_') !== trimmedMsg.lastIndexOf('_'))
+                    ) {
                         acc.currentMessageLines.push(trimmedMsg);
                     } else {
                         // following lines of the message (except for pagination and last line) (italic)
