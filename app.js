@@ -10,6 +10,10 @@ const app = new App({
 
 const MENTION_REGEX = /(\s|^)(@\w+)/g;
 const PAGE_REGEX = /^\d+\/\d+$/;
+const BOLD_REGEX = /^\**(.*)\**$/;
+const ITALIC_REGEX = /^\_*(.*)\_*$/;
+
+const replaceWithMatch = (_, match) => match;
 
 app.command('/post-list', async ({ command, ack, say }) => {
     await ack();
@@ -20,29 +24,41 @@ app.command('/post-list', async ({ command, ack, say }) => {
         .reduce(
             (acc, msg) => {
                 const trimmedMsg = msg.trim();
-                if (trimmedMsg.startsWith('@')) {
-                    // mention
+                const unformattedMsg = trimmedMsg
+                    .replace(BOLD_REGEX, replaceWithMatch)
+                    .replace(ITALIC_REGEX, replaceWithMatch);
+                if (unformattedMsg.startsWith('@')) {
+                    // mentions
                     trimmedMsg
                         .match(MENTION_REGEX)
                         .map((msg) => msg.trim())
-                        .forEach(msg => acc.mentions.add(msg));
-                } else if (trimmedMsg.startsWith('Урок')) {
-                    // last line of block
-                    acc.messages.push(`${acc.currentMessage}*${trimmedMsg}*\n`);
-                    acc.currentMessage = '';
+                        .forEach((msg) => acc.mentions.add(msg));
+                } else if (unformattedMsg.startsWith('Урок')) {
+                    // last line of message (bold)
+                    const messageStart = acc.currentMessageLines.join('\n');
+                    acc.messages.push(`${messageStart}\n*${trimmedMsg}*\n`);
+                    acc.currentMessageLines = [];
                 } else if (
-                    acc.currentMessage === '' &&
-                    trimmedMsg.match(PAGE_REGEX) &&
+                    acc.currentMessageLines.length === 0 &&
+                    unformattedMsg.match(PAGE_REGEX) &&
                     acc.messages.length
                 ) {
-                    // crutch for pagination on the separate line
-                    acc.messages[acc.messages.length - 1] += `${trimmedMsg}\n`;
+                    // crutch for pagination on the separate line (bold)
+                    acc.messages[
+                        acc.messages.length - 1
+                    ] += `*${trimmedMsg}*\n`;
                 } else {
-                    acc.currentMessage += `${trimmedMsg}\n`;
+                    if (acc.currentMessageLines.length === 0) {
+                        // 1st line of message (no styling)
+                        acc.currentMessageLines.push(trimmedMsg);
+                    } else {
+                        // following lines of the message (except for pagination and last line) (italic)
+                        acc.currentMessageLines.push(`_${trimmedMsg}_`);
+                    }
                 }
                 return acc;
             },
-            { messages: [], mentions: new Set(), currentMessage: '' }
+            { messages: [], mentions: new Set(), currentMessageLines: [] }
         );
 
     const mentionsString = Array.from(mentions).join(' ');
