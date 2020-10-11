@@ -22,10 +22,10 @@ app.command('/post-list', async ({ command, ack, say }) => {
                 const trimmedMsg = msg.trim();
                 if (trimmedMsg.startsWith('@')) {
                     // mention
-                    const newMentions = trimmedMsg
+                    trimmedMsg
                         .match(MENTION_REGEX)
-                        .map((msg) => msg.trim());
-                    acc.mentions.push(...newMentions);
+                        .map((msg) => msg.trim())
+                        .forEach(msg => acc.mentions.add(msg));
                 } else if (trimmedMsg.startsWith('Урок')) {
                     // last line of block
                     acc.messages.push(`${acc.currentMessage}*${trimmedMsg}*\n`);
@@ -42,10 +42,11 @@ app.command('/post-list', async ({ command, ack, say }) => {
                 }
                 return acc;
             },
-            { messages: [], mentions: [], currentMessage: '' }
+            { messages: [], mentions: new Set(), currentMessage: '' }
         );
 
-    const mentionsString = mentions.join(' ');
+    const mentionsString = Array.from(mentions).join(' ');
+
     for (const message of messages) {
         // do not use Promise.all to ensue messages order
         try {
