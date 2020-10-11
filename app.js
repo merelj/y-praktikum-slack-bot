@@ -1,4 +1,6 @@
-require('dotenv').config();
+if (process.env.DEV_MODE) {
+    require('dotenv').config();
+}
 const { App } = require('@slack/bolt');
 
 const app = new App({
